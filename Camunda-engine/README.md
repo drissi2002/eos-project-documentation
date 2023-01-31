@@ -3,7 +3,7 @@
 
 ## Camunda components overview
 
-![architecture-overview](https://user-images.githubusercontent.com/84160502/215854940-486da37e-4e12-4447-80b4-ec0b804f40a4.png)
+![image](https://user-images.githubusercontent.com/84160502/215856811-c3f8dd39-e8c3-490f-8e5c-372344026e13.png)
 
  ### Process Engine
  
