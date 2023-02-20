@@ -1,81 +1,50 @@
-import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
-import {HttpClient} from '@angular/common/http';
-import {Observable} from 'rxjs';
-
-import Modeler from 'bpmn-js/lib/Modeler.js';
-import propertiesPanelModule from 'bpmn-js-properties-panel';
-import propertiesProviderModule from 'bpmn-js-properties-panel/lib/provider/camunda';
-import camundaModdleDescriptor from 'camunda-bpmn-moddle/resources/camunda.json';
-
-import { saveAs } from 'file-saver';
-
+import { Component, ElementRef, ViewChild ,OnInit } from '@angular/core';
+import BpmnModeler from 'bpmn-js/lib/Modeler';
 
 @Component({
   selector: 'app-modeler',
-  templateUrl: './modeler.component.html',
+  templateUrl: "./modeler.component.html",
   styleUrls: ['./modeler.component.css']
 })
 export class ModelerComponent implements OnInit {
-  title = 'Workflow Modeler';
-  modeler: Modeler;
+  @ViewChild('canvas', { static: true }) canvasRef: ElementRef;
 
-  @ViewChild('canvas')
-  private canvesRef: ElementRef;
+  bpmnModeler :BpmnModeler
+  constructor() { }
 
-  constructor(private http: HttpClient) { }
-
-  ngOnInit(): void {
-    this.modeler = new Modeler({
-      container: '#canvas',
-      width: '100%',
-      height: '500px',
-      propertiesPanel: {
-        parent: '#properties'
-      },
-      additionalModules: [
-        propertiesPanelModule,
-        propertiesProviderModule,
-      ],
-     
-      moddleExtensions: {
-        camunda: camundaModdleDescriptor
-      }
-    });
-    this.load();
-  }
-
-  load(): void {
-    this.getExample().subscribe(data => {
-      this.modeler.importXML(data, (value: any) => this.handleError(value));
-    });
-  }
-
-  handleError(err: any) {
-    if (err) {
-      console.warn('Ups, error: ', err);
-    }
-  }
-
-  public getExample(): Observable<string> {
-    var propertiesPanel = this.modeler.get('propertiesPanel');
-    console.log(propertiesPanel);
-    //console.log(template);
+  ngOnInit() {
     
-    const url = '/assets/bpmn/process.bpmn'; // local
-    return this.http.get(url, {responseType: 'text'});
-  }
-  aveSVGFormat(){
-    this.modeler.saveSVG((err: any, svg: any) => {
-      const blob = new Blob([svg], {type: 'text/plain;charset=utf-8'});
-      saveAs.saveAs(blob, 'bpmnSample.bpmn');
+    this.bpmnModeler = new BpmnModeler({
+      container: this.canvasRef.nativeElement
     });
+    
+      //bpmnModeler.createDiagram();
+      // Load BPMN file
+      const url = './assets/bpmn/process.bpmn';
+      const xml = new XMLHttpRequest();
+      xml.open('GET', url, true);
+      xml.onreadystatechange = () => {
+        if (xml.readyState === 4 && xml.status === 200) {
+          this.bpmnModeler.importXML(xml.responseText, (err: any) => {
+            if (err) {
+              console.error(err);
+            } else {
+              const canvas = this.bpmnModeler.get('canvas');
+              const viewbox = canvas.viewbox();
+              const zoomFactor = Math.min(
+                canvas._container.clientWidth / viewbox.outer.width,
+                canvas._container.clientHeight / viewbox.outer.height,
+                1
+              ) * 0.8; // adjust zoom factor here
+              canvas.zoom(zoomFactor, { x: canvas._container.clientWidth/6, y: canvas._container.clientHeight/2 });
+            }
+          });
+        }
+      };
+      xml.send();
   }
-  save(): void {
-    this.modeler.saveXML({ format: true }, (err: any, xml: any) => {
-      console.log('Result of saving XML: ', xml);
-      const blob = new Blob([xml], {type: 'text/plain;charset=utf-8'});
-      saveAs.saveAs(blob, 'generatedWorkflow.bpmn');
-    });
+
+  ngOnDestroy() {
+    this.bpmnModeler.destroy();
   }
-  
 }
