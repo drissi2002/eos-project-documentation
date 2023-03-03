@@ -1,6 +1,6 @@
 spring:
   application:
-    name: standalone
+    name: embedded
   jpa:
     hibernate:
       ddl-auto: update
